@@ -29,7 +29,9 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 # Clean build files
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
+# Launch Application
+launch: all
+	./$(TARGET)
 
 # Phony targets to avoid conflicts with files named 'clean', 'all', etc.
-.PHONY: all clean
-
+.PHONY: all clean launch
