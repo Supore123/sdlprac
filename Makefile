@@ -32,4 +32,4 @@ clean:
 
 # Phony targets to avoid conflicts with files named 'clean', 'all', etc.
 .PHONY: all clean
- 
+
