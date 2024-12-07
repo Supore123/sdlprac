@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <SDL2/SDL.h>
 
 appConfig_t appConfig = {0};
 
@@ -25,6 +26,8 @@ void userInit(void)
 	}
 
 	printf("Loading App Version 0x0%u\r\n", appConfig.version);
+
+	screenInit();
 }
 
 appStatus_t NvmWriteData(void)
