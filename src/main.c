@@ -3,7 +3,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "app.h"
-
+#include <GL/freeglut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 /* Included functions */
 extern void userInit(void);
