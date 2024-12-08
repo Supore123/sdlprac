@@ -4,10 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// Hard defines
-#define APP_VERSION 		0x01
-#define APP_VERSION_STR		"0.01"
-
 // Variable defines
 typedef enum appStatus
 {
@@ -24,7 +20,7 @@ typedef struct appConfig
 }appConfig_t;
 
 // Function defines
-void appInit(void);
+appStatus_t appInit(void);
 appStatus_t NvmDataWrite(void);
 
 
