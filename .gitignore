@@ -1,0 +1,21 @@
+# Ignore build artifacts
+build/
+obj/
+*.o
+
+#Ignore executables
+app
+*.exe
+*.bin
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Ignore IDE/editor settings
+.vscode/
+.idea/
+*.swp
+.DS_Store
+ 
