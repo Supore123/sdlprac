@@ -12,9 +12,9 @@ LIB_DIR = lib
 # Target executable
 TARGET = app
 
-# Find all .c files in SRC_DIR and LIB_DIR, replace .c with .o for object files
+# Find all .c files in SRC_DIR and LIB_DIR (excluding lib/cJSON/test.c)
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
-LIB_FILES = $(wildcard $(LIB_DIR)/**/*.c)
+LIB_FILES = $(filter-out $(LIB_DIR)/cJSON/test.c, $(wildcard $(LIB_DIR)/**/*.c))
 OBJ_FILES = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES)) \
             $(patsubst $(LIB_DIR)/%.c, $(OBJ_DIR)/lib/%.o, $(LIB_FILES))
 
