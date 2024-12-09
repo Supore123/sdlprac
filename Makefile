@@ -1,7 +1,7 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -Iinclude -Wall -Wextra -std=c11 -Ilib/cJSON 
-LDFLAGS = -lSDL2 -lGL -lGLU -lglut
+LDFLAGS = -lSDL2 -lGL -lGLU -lglut -lSDL2_image
 
 # Directories
 SRC_DIR = src
