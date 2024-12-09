@@ -9,7 +9,9 @@ Window_t *mainWin = {NULL};
 appStatus_t screenInit(void)
 {
     appStatus_t sc = APP_STATUS_OK;
-    
+
+    sc = mapInit();
+
     return sc;
 }
 
