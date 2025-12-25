@@ -111,3 +111,24 @@ int main()
 #include "SplashState.h"     // class  SplashState  (own header, COMMIT 02)
 #include "Camera.h"
 #include "Renderer2D.h"
+    //                   EngineContext and pushing the first state.
+    //
+    // BUG: In the original, Camera and Renderer2D were declared AFTER
+    // return EXIT_SUCCESS — dead code. ctx.camera and ctx.renderer were
+    // therefore always nullptr. SplashState::render() dereferenced both
+    // immediately (* m_ctx->renderer, * m_ctx->camera), which would have
+    // been a guaranteed null-pointer crash on the very first frame.
+    Camera     camera;
+    Renderer2D renderer;
+
+    camera.setMode(Camera::Mode::Orthographic);
+    camera.setOrthoSize(1280.f, 720.f);
+
+    if (!renderer.init(shaderManager))
+    {
+        std::cerr << "[main] Renderer2D init failed.\n";
+        SDL_GL_DeleteContext(glContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
