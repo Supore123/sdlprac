@@ -132,3 +132,17 @@ int main()
         SDL_Quit();
         return EXIT_FAILURE;
     }
+    //                   then push the first state.
+    //
+    // BUG: In the original, ctx.camera and ctx.renderer were assigned after
+    // return EXIT_SUCCESS and therefore never set. Now Camera and Renderer2D
+    // are live (see COMMIT 05) and assigned here before gsm.push().
+    EngineContext ctx;
+    ctx.shaders   = &shaderManager;
+    ctx.resources = &resourceManager;
+    ctx.input     = &inputManager;
+    ctx.gsm       = &gsm;
+    ctx.camera    = &camera;    // was always nullptr in the original
+    ctx.renderer  = &renderer;  // was always nullptr in the original
+
+    gsm.push(std::make_unique<SplashState>(&ctx));
