@@ -146,3 +146,66 @@ int main()
     ctx.renderer  = &renderer;  // was always nullptr in the original
 
     gsm.push(std::make_unique<SplashState>(&ctx));
+    //
+    // Fix 1 — First-frame dt spike:
+    //   Original: last = 0, now = SDL_GetPerformanceCounter() — on frame 1
+    //   dt = (now - 0) / freq which is a huge garbage value (seconds since
+    //   the epoch on some platforms, or billions of ticks). Fixed by seeding
+    //   'last' to 'now' so the first delta is effectively zero.
+    //
+    // Fix 2 — Window resize handler wired into the event loop:
+    //   Original: the resize handler was floating code after return EXIT_SUCCESS.
+    //   It is now correctly placed inside SDL_PollEvent loop.
+    //
+    // Fix 3 — processEvent called only once per event:
+    //   Original: main loop called inputManager.processEvent(e), then
+    //   gsm.handleEvent(e) → SplashState::handleEvent → processEvent(e) again.
+    //   Every keydown/up was therefore registered twice; isActionPressed()
+    //   would fire on two consecutive frames instead of just one.
+    //   SplashState::handleEvent is now a no-op for processEvent (see
+    //   SplashState.cpp COMMIT 03). States must only READ InputManager.
+
+    bool   running = true;
+    Uint64 now     = SDL_GetPerformanceCounter();
+    Uint64 last    = now;   // FIX 1: seed last = now, not 0
+    double freq    = static_cast<double>(SDL_GetPerformanceFrequency());
+
+    while (running)
+    {
+        last = now;
+        now  = SDL_GetPerformanceCounter();
+        float dt = static_cast<float>(static_cast<double>(now - last) / freq);
+
+        // Clear single-frame flags BEFORE processing new events
+        inputManager.update();
+        gsm.processTransition();
+
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+            // FIX 2: resize handler lives here, not in dead code after return
+            if (e.type == SDL_WINDOWEVENT &&
+                e.window.event == SDL_WINDOWEVENT_RESIZED)
+            {
+                float w = static_cast<float>(e.window.data1);
+                float h = static_cast<float>(e.window.data2);
+                camera.setOrthoSize(w, h);
+                camera.setAspect(w / h);
+                glViewport(0, 0, e.window.data1, e.window.data2);
+            }
+
+            // FIX 3: processEvent exactly once, here. States only read.
+            inputManager.processEvent(e);
+            gsm.handleEvent(e);
+        }
+
+        if (inputManager.quit() || inputManager.isActionPressed("back"))
+            running = false;
+
+        gsm.update(dt);
+        gsm.render();
+        SDL_GL_SwapWindow(window);
+
+        if (gsm.isEmpty())
+            running = false;
+    }
