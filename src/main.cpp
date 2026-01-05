@@ -209,3 +209,14 @@ int main()
         if (gsm.isEmpty())
             running = false;
     }
+    //                   context destruction.
+    //
+    // renderer.shutdown() and resourceManager.releaseAll() call glDelete*
+    // functions. These must run while the GL context is still valid, i.e.
+    // BEFORE SDL_GL_DeleteContext. The destructors would handle this correctly
+    // if the locals go out of scope before glContext is destroyed, but making
+    // it explicit protects against future refactors that change object lifetimes
+    // (e.g. heap-allocating any of these systems).
+    renderer.shutdown();
+    resourceManager.releaseAll();
+    shaderManager.deleteAll();
