@@ -145,10 +145,26 @@ void Camera::recalculateProjection()
     }
     else
     {
-        // Origin top-left, +Y down — matches screen/SDL coordinate conventions
+    }
+}
+        //
+        // BUG: near=-1, far=1 clips ALL 2D geometry to a 2-unit z slab
+        // in VIEW space.  The Camera's default position is {0, 0, 3}, so
+        // its view matrix translates every world point by -3 on z:
+        //
+        //   world z=0  →  view z = -3  →  NDC z = -3  →  CLIPPED (outside [-1,1])
+        //
+        // Result: GPU hardware discards every triangle before the fragment
+        // shader runs → blank screen despite the clear colour appearing.
+        //
+        // Fix: widen the slab to ±1000 units.
+        //   - Covers the default camera position (z=3) and any reasonable
+        //     2D camera scroll position without additional API calls.
+        //   - Leaves room for z-ordering of sprites (draw-order layering).
+        //   - Has zero impact on a perspective camera (it uses m_near/m_far).
+        //
+        // Origin top-left, +Y down — matches screen/SDL coordinate conventions.
         m_projection = glm::ortho(
             0.f, m_orthoWidth,
             m_orthoHeight, 0.f,
-            -1.f, 1.f);
-    }
-}
+            -1000.f, 1000.f);
