@@ -8,14 +8,6 @@
 #include "InputManager.h"
 
 
-// ---------------------------------------------------------------------- //
-//  Concrete stub states                                                   //
-// ---------------------------------------------------------------------- //
-
-
-// ---------------------------------------------------------------------- //
-//  Entry point                                                            //
-// ---------------------------------------------------------------------- //
 
 int main()
 {
@@ -67,17 +59,6 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    // ------------------------------------------------------------------ //
-    //  Engine systems                                                     //
-    // ------------------------------------------------------------------ //
-
-    ShaderManager    shaderManager;
-    GameStateMachine gsm;
-
-
-    // ------------------------------------------------------------------ //
-    //  Game loop                                                          //
-    // ------------------------------------------------------------------ //
 
     bool   running = true;
     Uint64 now     = SDL_GetPerformanceCounter();
@@ -104,21 +85,13 @@ int main()
     SDL_Quit();
     return EXIT_SUCCESS;
 }
-
-/**
- * EngineContext
- * Thin aggregate passed into every state so systems are accessible
- * without global singletons. Extend as more systems are added.
- */
 struct EngineContext
 {
-    ShaderManager*   shaders   = nullptr;
-    ResourceManager* resources = nullptr;
-    InputManager*    input     = nullptr;
-    GameStateMachine* gsm      = nullptr;
+    ShaderManager*    shaders   = nullptr;
+    ResourceManager*  resources = nullptr;
+    InputManager*     input     = nullptr;
+    GameStateMachine* gsm       = nullptr;
 };
-
-
 class SplashState : public IGameState
 {
 public:
@@ -135,7 +108,7 @@ public:
     void update(float /*dt*/) override
     {
         if (m_ctx->input->isActionPressed("confirm"))
-            std::cout << "[SplashState] Confirm pressed — wire in your MenuState here.\n";
+            std::cout << "[SplashState] Confirm — wire your MenuState here.\n";
     }
 
     void render() override
@@ -149,10 +122,10 @@ public:
 private:
     EngineContext* m_ctx = nullptr;
 };
-
-
-    ResourceManager resourceManager;
-    InputManager    inputManager;
+    ShaderManager    shaderManager;
+    GameStateMachine gsm;
+    ResourceManager  resourceManager;
+    InputManager     inputManager;
 
     resourceManager.initAudio();
 
@@ -170,8 +143,6 @@ private:
     ctx.gsm       = &gsm;
 
     gsm.push(std::make_unique<SplashState>(&ctx));
-
-
         inputManager.update();
         gsm.processTransition();
 
@@ -184,4 +155,3 @@ private:
 
         if (inputManager.quit() || inputManager.isActionPressed("back"))
             running = false;
-
