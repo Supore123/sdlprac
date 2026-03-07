@@ -1,35 +1,28 @@
-# Compiler and flags
-CC =gcc
-CFLAGS = -Iinclude -Wall -Werror -Wextra -std=c11
+CXX      = g++
+CXXFLAGS = -Iinclude -Wall -Werror -Wextra -std=c++17
 
-# Directories
+SDL2_FLAGS  = $(shell sdl2-config --cflags --libs)
+GL_FLAGS    = -lGL -lGLEW
+MIXER_FLAGS = -lSDL2_mixer
+
 SRC_DIR = src
 INC_DIR = include
 OBJ_DIR = obj
+TARGET  = app
 
-# Target executable
-TARGET = app
+SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp)
+OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_FILES))
 
-# Find all .c files in SRC_DIR and replace .c with .o for object files
-SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
-OBJ_FILES = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES))
-
-# Default target
 all: $(TARGET)
 
-# Link object files to create the executable
 $(TARGET): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $@
+	$(CXX) $(OBJ_FILES) -o $@ $(SDL2_FLAGS) $(GL_FLAGS) $(MIXER_FLAGS)
 
-# Compile .c files to .o files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(SDL2_FLAGS) -c $< -o $@
 
-# Clean build files
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
-# Phony targets to avoid conflicts with files named 'clean', 'all', etc.
 .PHONY: all clean
- 
