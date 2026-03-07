@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <iostream>
 #include <algorithm>
+#include <cmath>     // FIX: std::abs(float) — not guaranteed by <algorithm>
 
 // -------------------------------------------------------------------------- //
 //  Level layout — 25 columns × 15 rows, tileSize = 48px = 1200 × 720        //
