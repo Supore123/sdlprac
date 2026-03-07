@@ -145,5 +145,16 @@ void Camera::recalculateProjection()
     }
     else
     {
+        // BUG FIX: Widen the slab to ±1000 units.
+        //   - Covers the default camera position (z=3) and any reasonable
+        //     2D camera scroll position without additional API calls.
+        //   - Leaves room for z-ordering of sprites (draw-order layering).
+        //   - Has zero impact on a perspective camera (it uses m_near/m_far).
+        //
+        // Origin top-left, +Y down — matches screen/SDL coordinate conventions.
+        m_projection = glm::ortho(
+            0.f, m_orthoWidth,
+            m_orthoHeight, 0.f,
+            -1000.f, 1000.f);
     }
 }
