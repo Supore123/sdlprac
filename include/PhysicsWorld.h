@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <functional>
+#include <cstdint>   // FIX: uint32_t used in OverlapCallback — not guaranteed by <functional>
 
 class World;
 class Tilemap;
