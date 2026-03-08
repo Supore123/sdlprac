@@ -313,3 +313,50 @@ void GameplayState::renderFadeOverlay()
         m_tilemap.setTilesetTexture(tex.id, /*tilesetCols=*/8, /*tilesetRows=*/4);
     else
         std::cout << "[GameplayState] tiles.png not found — using coloured quad fallback.\n";
+    // Layout assumed: 4 columns × 3 rows spritesheet
+    //   Row 0 (y: 0.00–0.33): idle  — 2 frames
+    //   Row 1 (y: 0.33–0.67): run   — 4 frames
+    //   Row 2 (y: 0.67–1.00): jump  — 1 frame
+    //
+    // When no spritesheet is available the UVs all resolve to the white 1×1
+    // texture, so the tinted quad fallback still works correctly.
+
+    auto makeFrame = [](int col, int row, int totalCols, int totalRows) -> AnimationFrame {
+        float fw = 1.f / static_cast<float>(totalCols);
+        float fh = 1.f / static_cast<float>(totalRows);
+        return AnimationFrame {
+            { col * fw,       row * fh       },
+            { (col + 1) * fw, (row + 1) * fh }
+        };
+    };
+
+    constexpr int kCols = 4, kRows = 3;
+
+    AnimationClip idle;
+    idle.name   = "idle";
+    idle.fps    = 4.f;
+    idle.loop   = true;
+    idle.frames = { makeFrame(0, 0, kCols, kRows),
+                    makeFrame(1, 0, kCols, kRows) };
+
+    AnimationClip run;
+    run.name   = "run";
+    run.fps    = 10.f;
+    run.loop   = true;
+    run.frames = { makeFrame(0, 1, kCols, kRows),
+                   makeFrame(1, 1, kCols, kRows),
+                   makeFrame(2, 1, kCols, kRows),
+                   makeFrame(3, 1, kCols, kRows) };
+
+    AnimationClip jump;
+    jump.name   = "jump";
+    jump.fps    = 4.f;
+    jump.loop   = false;
+    jump.frames = { makeFrame(0, 2, kCols, kRows) };
+
+    AnimatorComponent anim;
+    anim.clips["idle"] = idle;
+    anim.clips["run"]  = run;
+    anim.clips["jump"] = jump;
+    anim.currentClip   = "idle";
+    m_world.add<AnimatorComponent>(m_player, std::move(anim));
