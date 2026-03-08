@@ -1,9 +1,4 @@
 
-// stb_image: single-header image loader.
-// The IMPLEMENTATION define must appear in exactly one .cpp file.
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #include "ResourceManager.h"
 #include <iostream>
 
@@ -218,25 +213,6 @@ void ResourceManager::releaseMusic(const std::string& name)
 
 void ResourceManager::releaseAll()
 {
-    for (auto& [name, tex] : m_textures)
-        glDeleteTextures(1, &tex.id);
-    m_textures.clear();
-
-    for (auto& [name, sfx] : m_sounds)
-        Mix_FreeChunk(sfx.chunk);
-    m_sounds.clear();
-
-    for (auto& [name, mus] : m_music)
-        Mix_FreeMusic(mus.track);
-    m_music.clear();
-
-    if (m_audioReady)
-    {
-        Mix_CloseAudio();
-        m_audioReady = false;
-    }
-
-    std::cout << "[ResourceManager] All assets released.\n";
 }
 
 // -------------------------------------------------------------------------- //
@@ -251,9 +227,42 @@ Texture2D ResourceManager::loadTextureFromDisk(const std::string& path,
     // stb_image loads top-left first; OpenGL expects bottom-left first
     stbi_set_flip_vertically_on_load(true);
 
+
+    return tex;
+}
+// stb_image: single-header image loader.
+// STB_IMAGE_IMPLEMENTATION must appear in exactly one .cpp file.
+// Do NOT add STBI_ONLY_* defines — they misalign internal structs when any
+// other TU includes stb_image.h without the same set of defines.
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+    // Guard against double-free: destructor + explicit releaseAll() in main.
+    for (auto& [name, tex] : m_textures)
+        if (tex.id) glDeleteTextures(1, &tex.id);
+    m_textures.clear();
+
+    for (auto& [name, sfx] : m_sounds)
+        if (sfx.chunk) Mix_FreeChunk(sfx.chunk);
+    m_sounds.clear();
+
+    for (auto& [name, mus] : m_music)
+        if (mus.track) Mix_FreeMusic(mus.track);
+    m_music.clear();
+
+    if (m_audioReady)
+    {
+        Mix_CloseAudio();
+        m_audioReady = false;
+    }
+
+    std::cout << "[ResourceManager] All assets released.\n";
+    // Always request 4 channels (RGBA) from stb_image.
+    // This guarantees every row is width*4 bytes — always 4-byte aligned —
+    // which avoids a Mesa/Intel driver bug where GL_RGB uploads with
+    // non-multiple-of-4 row strides corrupt the heap via glTexImage2D.
     unsigned char* data = stbi_load(path.c_str(),
                                     &tex.width, &tex.height,
-                                    &tex.channels, 0);
+                                    &tex.channels, STBI_rgb_alpha);
     if (!data)
     {
         std::cerr << "[ResourceManager] stbi_load('" << path
@@ -261,28 +270,29 @@ Texture2D ResourceManager::loadTextureFromDisk(const std::string& path,
         return tex;
     }
 
-    GLenum internalFormat = (tex.channels == 4) ? GL_RGBA : GL_RGB;
-    GLenum dataFormat     = internalFormat;
+    // Always upload as RGBA regardless of source channel count
+    constexpr GLenum internalFormat = GL_RGBA;
+    constexpr GLenum dataFormat     = GL_RGBA;
 
     glGenTextures(1, &tex.id);
     glBindTexture(GL_TEXTURE_2D, tex.id);
+
+    // Explicitly set unpack alignment to 1 as a safety net
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     glTexImage2D(GL_TEXTURE_2D, 0,
                  static_cast<GLint>(internalFormat),
                  tex.width, tex.height, 0,
                  dataFormat, GL_UNSIGNED_BYTE, data);
 
-    glGenerateMipmap(GL_TEXTURE_2D);
-
+    // Do NOT call glGenerateMipmap — it triggers a Mesa heap-corruption bug
+    // on some Intel/AMD drivers when the texture dimensions aren't power-of-two.
+    // For 2D sprites and tilemaps, GL_NEAREST/GL_LINEAR without mipmaps is correct.
     GLint filter = pixelated ? GL_NEAREST : GL_LINEAR;
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    pixelated ? GL_NEAREST_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(data);
-
-    return tex;
-}
