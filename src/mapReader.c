@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <cJSON.h>
 #include "app.h"
 
@@ -33,8 +34,8 @@ typedef struct
     int map_height;
 } Map;
 
-// Function prototypes
-int load_map(const char *file_path, Map *map);
+// Function prototypes updated to accept renderer
+int load_map(SDL_Renderer *renderer, const char *file_path, Map *map);
 void render_map(SDL_Renderer *renderer, Map *map);
 
 appStatus_t mapInit()
@@ -77,9 +78,13 @@ appStatus_t mapInit()
         return 1;
     }
 
-    // Load map from Tiled JSON file
+    // Initialize map structure pointers to NULL for safe cleanup
     Map map;
-    if (load_map("imgs/json/map.tmj", &map) != 0)
+    map.tileset = NULL;
+    map.layers = NULL;
+
+    // Load map from Tiled JSON file - passing renderer here
+    if (load_map(renderer, "imgs/json/map.tmj", &map) != 0)
     {
         SDL_Log("Failed to load map");
         SDL_DestroyRenderer(renderer);
@@ -102,23 +107,28 @@ appStatus_t mapInit()
             }
         }
 
-        // Clear the screen (optional)
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         // Call render_map to render the tiles
         render_map(renderer, &map);
 
-        // Present the rendered image
         SDL_RenderPresent(renderer);
-
-        // Delay for a short time (optional)
-        SDL_Delay(16); // Approximately 60 FPS
+        SDL_Delay(16); 
     }
 
     // Clean up resources
-    SDL_DestroyTexture(map.tileset->texture);
-    free(map.tileset);
-    free(map.layers);
+    if (map.tileset) {
+        if (map.tileset->texture) SDL_DestroyTexture(map.tileset->texture);
+        free(map.tileset);
+    }
+    if (map.layers) {
+        for(int i = 0; i < map.num_layers; i++) {
+            free(map.layers[i].tile_data);
+        }
+        free(map.layers);
+    }
+    
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
@@ -127,9 +137,8 @@ appStatus_t mapInit()
     return 0;
 }
 
-int load_map(const char *file_path, Map *map)
+int load_map(SDL_Renderer *renderer, const char *file_path, Map *map)
 {
-    // Open the JSON file
     FILE *file = fopen(file_path, "r");
     if (!file)
     {
@@ -151,9 +160,8 @@ int load_map(const char *file_path, Map *map)
 
     fread(buffer, 1, file_size, file);
     fclose(file);
-    buffer[file_size] = '\0'; // Null-terminate the string
+    buffer[file_size] = '\0';
 
-    // Parse JSON
     cJSON *json = cJSON_Parse(buffer);
     free(buffer);
     if (!json)
@@ -162,54 +170,45 @@ int load_map(const char *file_path, Map *map)
         return -1;
     }
 
-    // Extract map dimensions
-    cJSON *width_json = cJSON_GetObjectItem(json, "width");
-    cJSON *height_json = cJSON_GetObjectItem(json, "height");
-    cJSON *tile_width_json = cJSON_GetObjectItem(json, "tilewidth");
-    cJSON *tile_height_json = cJSON_GetObjectItem(json, "tileheight");
-    cJSON *layers_json = cJSON_GetObjectItem(json, "layers");
-    cJSON *tilesets_json = cJSON_GetObjectItem(json, "tilesets");
+    map->map_width = cJSON_GetObjectItem(json, "width")->valueint;
+    map->map_height = cJSON_GetObjectItem(json, "height")->valueint;
 
-    if (!width_json || !height_json || !tile_width_json || !tile_height_json || !layers_json || !tilesets_json)
-    {
-        SDL_Log("Missing required fields in JSON");
-        cJSON_Delete(json);
-        return -1;
-    }
-
-    map->map_width = width_json->valueint;
-    map->map_height = height_json->valueint;
     map->tileset = (Tileset *)malloc(sizeof(Tileset));
-    map->tileset->tile_width = tile_width_json->valueint;
-    map->tileset->tile_height = tile_height_json->valueint;
+    map->tileset->tile_width = cJSON_GetObjectItem(json, "tilewidth")->valueint;
+    map->tileset->tile_height = cJSON_GetObjectItem(json, "tileheight")->valueint;
 
-    // Load the tileset texture
-    cJSON *tileset_json = cJSON_GetArrayItem(tilesets_json, 0);
-    const char *tileset_image = cJSON_GetObjectItem(tileset_json, "image")->valuestring;
-    map->tileset->texture = IMG_LoadTexture(NULL, tileset_image); // Assuming the texture is in the working directory
+    // Get the image path from the JSON
+    cJSON *tilesets_json = cJSON_GetObjectItem(json, "tilesets");
+    cJSON *tileset_node = cJSON_GetArrayItem(tilesets_json, 0);
+    const char *tileset_image_path = cJSON_GetObjectItem(tileset_node, "image")->valuestring;
+
+    // FIX: Use the path directly if your JSON already includes 'imgs/'
+    // If the JSON says "imgs/png/...", this will now load correctly.
+    map->tileset->texture = IMG_LoadTexture(renderer, tileset_image_path);
 
     if (!map->tileset->texture)
     {
-        SDL_Log("Failed to load tileset texture: %s", IMG_GetError());
+        SDL_Log("Failed to load tileset texture at %s: %s", tileset_image_path, IMG_GetError());
         cJSON_Delete(json);
         return -1;
     }
 
-    // Read layer data
+    cJSON *layers_json = cJSON_GetObjectItem(json, "layers");
     map->num_layers = cJSON_GetArraySize(layers_json);
     map->layers = (TileLayer *)malloc(sizeof(TileLayer) * map->num_layers);
+
     for (int i = 0; i < map->num_layers; i++)
     {
         cJSON *layer_json = cJSON_GetArrayItem(layers_json, i);
         cJSON *data_json = cJSON_GetObjectItem(layer_json, "data");
 
         map->layers[i].tile_data = (int *)malloc(sizeof(int) * map->map_width * map->map_height);
-        cJSON *tile_json = data_json->child;
+        cJSON *tile_node = data_json->child;
         int index = 0;
-        while (tile_json)
+        while (tile_node && index < (map->map_width * map->map_height))
         {
-            map->layers[i].tile_data[index++] = tile_json->valueint;
-            tile_json = tile_json->next;
+            map->layers[i].tile_data[index++] = tile_node->valueint;
+            tile_node = tile_node->next;
         }
     }
 
@@ -219,33 +218,42 @@ int load_map(const char *file_path, Map *map)
 
 void render_map(SDL_Renderer *renderer, Map *map)
 {
-    // Iterate through each layer
+    if (!map->tileset || !map->tileset->texture) return;
+
+    int tileset_width, tileset_height;
+    SDL_QueryTexture(map->tileset->texture, NULL, NULL, &tileset_width, &tileset_height);
+    int cols_in_tileset = tileset_width / map->tileset->tile_width;
+
     for (int layer_idx = 0; layer_idx < map->num_layers; layer_idx++)
     {
         TileLayer *layer = &map->layers[layer_idx];
 
-        // Iterate through each tile in the layer
         for (int y = 0; y < map->map_height; y++)
         {
             for (int x = 0; x < map->map_width; x++)
             {
-                // Get the tile index for the current position
                 int tile_index = layer->tile_data[y * map->map_width + x];
-                if (tile_index == 0)
-                    continue; // Skip empty tiles (index 0)
+                if (tile_index == 0) continue; 
 
-                // Query the tileset texture dimensions
-                int tileset_width, tileset_height;
-                SDL_QueryTexture(map->tileset->texture, NULL, NULL, &tileset_width, &tileset_height);
+                // Tiled indices are 1-based (0 is empty)
+                int local_index = tile_index - 1;
+                int tile_x = local_index % cols_in_tileset;
+                int tile_y = local_index / cols_in_tileset;
 
-                // Calculate the source rect for the tile in the tileset image
-                int tile_x = (tile_index - 1) % (tileset_width / map->tileset->tile_width);
-                int tile_y = (tile_index - 1) / (tileset_width / map->tileset->tile_width);
+                SDL_Rect src_rect = {
+                    tile_x * map->tileset->tile_width, 
+                    tile_y * map->tileset->tile_height, 
+                    map->tileset->tile_width, 
+                    map->tileset->tile_height
+                };
+                
+                SDL_Rect dest_rect = {
+                    x * map->tileset->tile_width, 
+                    y * map->tileset->tile_height, 
+                    map->tileset->tile_width, 
+                    map->tileset->tile_height
+                };
 
-                SDL_Rect src_rect = {tile_x * map->tileset->tile_width, tile_y * map->tileset->tile_height, map->tileset->tile_width, map->tileset->tile_height};
-                SDL_Rect dest_rect = {x * map->tileset->tile_width, y * map->tileset->tile_height, map->tileset->tile_width, map->tileset->tile_height};
-
-                // Render the tile
                 SDL_RenderCopy(renderer, map->tileset->texture, &src_rect, &dest_rect);
             }
         }
