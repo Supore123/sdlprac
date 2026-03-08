@@ -1,4 +1,3 @@
-
 #include "GameplayState.h"
 #include "EngineContext.h"
 #include "Camera.h"
@@ -42,6 +41,7 @@ static constexpr int   k_cols     = 25;
 static constexpr int   k_rows     = 15;
 static constexpr int   k_tileSize = 48;
 
+
 // -------------------------------------------------------------------------- //
 //  Construction                                                               //
 // -------------------------------------------------------------------------- //
@@ -61,6 +61,8 @@ void GameplayState::onEnter()
     m_world.clear();
     buildLevel();
     spawnPlayer();
+
+
 
     // Fade in from black
     m_fadeAlpha  = 1.f;
@@ -124,6 +126,7 @@ void GameplayState::update(float dt)
     // ── Physics ──────────────────────────────────────────────────────────────
     m_physics.update(m_world, m_tilemap, dt);
 
+
     // ── Animation ────────────────────────────────────────────────────────────
     updateAnimatorState();
     m_animSystem.update(m_world, dt);
@@ -168,9 +171,7 @@ void GameplayState::render()
 void GameplayState::buildLevel()
 {
     m_tilemap.load(k_cols, k_rows, k_tileSize, k_levelTiles);
-    // setTilesetTexture() can be called here once you have a tileset PNG:
-    //   auto tex = m_ctx->resources->loadTexture("tiles", "res/tiles.png", true);
-    //   m_tilemap.setTilesetTexture(tex.id, 8, 4);
+
 }
 
 void GameplayState::spawnPlayer()
@@ -223,69 +224,12 @@ void GameplayState::spawnPlayer()
     //   AnimationFrame f1 = { {0.25f, 0.f}, {0.50f, 1.f} };
     //   ...
 
-    AnimationFrame fullUV = { {0.f, 0.f}, {1.f, 1.f} };
-
-    AnimationClip idle;
-    idle.name   = "idle";
-    idle.fps    = 4.f;
-    idle.loop   = true;
-    idle.frames = { fullUV, fullUV };   // two identical frames → use colour tint change
-
-    AnimationClip run;
-    run.name   = "run";
-    run.fps    = 8.f;
-    run.loop   = true;
-    run.frames = { fullUV, fullUV, fullUV, fullUV };
-
-    AnimationClip jump;
-    jump.name   = "jump";
-    jump.fps    = 4.f;
-    jump.loop   = false;
-    jump.frames = { fullUV };
-
-    AnimatorComponent anim;
-    anim.clips["idle"] = idle;
-    anim.clips["run"]  = run;
-    anim.clips["jump"] = jump;
-    anim.currentClip   = "idle";
-    m_world.add<AnimatorComponent>(m_player, std::move(anim));
 }
 
 // -------------------------------------------------------------------------- //
 //  Private — per-frame logic                                                  //
 // -------------------------------------------------------------------------- //
 
-void GameplayState::processPlayerInput(float dt)
-{
-    if (m_player == NULL_ENTITY) return;
-
-    auto& rb = m_world.get<RigidbodyComponent>(m_player);
-    auto& pc = m_world.get<PlayerComponent>(m_player);
-
-    // Horizontal movement — direct velocity control (feel better than force)
-    float targetVX = 0.f;
-    if (m_ctx->input->isActionDown("left"))
-    {
-        targetVX     = -pc.speed;
-        pc.facingRight = false;
-    }
-    if (m_ctx->input->isActionDown("right"))
-    {
-        targetVX     = pc.speed;
-        pc.facingRight = true;
-    }
-    rb.velocity.x = targetVX;
-
-    // Jump — only when on ground
-    if (m_ctx->input->isActionPressed("confirm") && rb.onGround)
-        rb.velocity.y = -pc.jumpForce;
-
-    // Flip sprite scale to face the direction of travel
-    auto& tf = m_world.get<TransformComponent>(m_player);
-    tf.scale.x = pc.facingRight ? 1.f : -1.f;
-
-    (void)dt;
-}
 
 void GameplayState::updateAnimatorState()
 {
@@ -360,3 +304,12 @@ void GameplayState::renderFadeOverlay()
                    glm::vec4(0.f, 0.f, 0.f, m_fadeAlpha));
     r.end();
 }
+    // Load the tileset and pass it to the tilemap so draw() uses UV-mapped quads
+    // instead of the solid-colour fallback.
+    // Sheet layout: 8 columns × 4 rows  (each tile = 1/8 wide, 1/4 tall in UV space).
+    // Expected file: res/tiles.png  — replace path/dims to match your actual asset.
+    auto tex = m_ctx->resources->loadTexture("tiles", "res/tiles.png", /*pixelated=*/true);
+    if (tex.isValid())
+        m_tilemap.setTilesetTexture(tex.id, /*tilesetCols=*/8, /*tilesetRows=*/4);
+    else
+        std::cout << "[GameplayState] tiles.png not found — using coloured quad fallback.\n";
