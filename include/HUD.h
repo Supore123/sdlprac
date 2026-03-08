@@ -1,8 +1,8 @@
 #pragma once
 
-
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <string>
 
 class Renderer2D;
 class Camera;
@@ -15,15 +15,14 @@ class Camera;
  * by extending drawText().
  *
  * ── Usage ────────────────────────────────────────────────────────────────────
- *   // Create a screen-space orthographic camera once:
  *   Camera hudCam;
  *   hudCam.setMode(Camera::Mode::Orthographic);
  *   hudCam.setOrthoSize(1280.f, 720.f);
  *
- *   // In render():
  *   hud.begin(renderer, hudCam);
- *       hud.drawHealthBar({20, 20}, 3, 5);       // 3/5 hearts
+ *       hud.drawHealthBar({20, 20}, 3, 5);
  *       hud.drawPanel({10, 10}, {200, 40}, {0,0,0,0.6f});
+ *       hud.drawText({20, 70}, "Score: 42", fontTex, 16.f);
  *   hud.end();
  *
  * begin/end wrap a Renderer2D batch — don't nest inside another batch.
@@ -35,44 +34,39 @@ public:
 
     // ── Frame API ────────────────────────────────────────────────────────────
 
-    /** Begin a screen-space HUD batch. hudCamera must be orthographic. */
     void begin(Renderer2D& renderer, const Camera& hudCamera);
-
-    /** Flush and finish the HUD batch. */
     void end();
 
     // ── Elements ─────────────────────────────────────────────────────────────
 
-    /**
-     * Draw a row of heart / pip health indicators.
-     * @param topLeft     Top-left screen position
-     * @param current     Filled pips
-     * @param maximum     Total pips
-     * @param pipSize     Width and height of each pip square (default 24)
-     * @param padding     Gap between pips (default 6)
-     */
     void drawHealthBar(glm::vec2 topLeft,
                        int current, int maximum,
                        float pipSize = 24.f, float padding = 6.f);
 
-    /**
-     * Draw a semi-transparent panel (background rect).
-     * Useful for score boxes, dialogue frames, etc.
-     */
     void drawPanel(glm::vec2 position, glm::vec2 size,
                    glm::vec4 colour = { 0.f, 0.f, 0.f, 0.55f });
 
-    /**
-     * Draw a horizontal progress bar (e.g. stamina, XP).
-     * @param topLeft   Top-left screen corner
-     * @param size      Total bar dimensions
-     * @param fraction  Fill fraction [0, 1]
-     * @param fillColour Colour of the filled portion
-     */
     void drawProgressBar(glm::vec2 topLeft, glm::vec2 size, float fraction,
                          glm::vec4 fillColour  = { 0.2f, 0.8f, 0.3f, 1.f },
                          glm::vec4 emptyColour = { 0.2f, 0.2f, 0.2f, 0.8f });
 
+
 private:
     Renderer2D* m_renderer = nullptr;
 };
+    /**
+     * Draw a string using a bitmap font texture atlas (16 cols × 8 rows,
+     * ASCII 32–127). Pass fontTexID = 0 to silently skip (no asset needed).
+     * @param position   Top-left screen position of the first glyph
+     * @param text       String to render
+     * @param fontTexID  OpenGL texture ID of the font sheet (0 = no-op)
+     * @param glyphW     Width  of one glyph in screen pixels (default 16)
+     * @param glyphH     Height of one glyph in screen pixels (default 16)
+     * @param colour     Tint colour (default white)
+     */
+    void drawText(glm::vec2          position,
+                  const std::string& text,
+                  GLuint             fontTexID,
+                  float              glyphW   = 16.f,
+                  float              glyphH   = 16.f,
+                  glm::vec4          colour   = { 1.f, 1.f, 1.f, 1.f });

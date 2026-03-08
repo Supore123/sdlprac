@@ -1,4 +1,3 @@
-
 #include "HUD.h"
 #include "Renderer2D.h"
 #include "Camera.h"
@@ -63,6 +62,7 @@ void HUD::drawPanel(glm::vec2 position, glm::vec2 size, glm::vec4 colour)
     m_renderer->drawQuad(position, size, colour);
 }
 
+
 void HUD::drawProgressBar(glm::vec2 topLeft, glm::vec2 size, float fraction,
                            glm::vec4 fillColour, glm::vec4 emptyColour)
 {
@@ -76,4 +76,49 @@ void HUD::drawProgressBar(glm::vec2 topLeft, glm::vec2 size, float fraction,
     // Filled portion
     if (fraction > 0.f)
         m_renderer->drawQuad(topLeft, { size.x * fraction, size.y }, fillColour);
+}
+// Bitmap font layout assumed: 16 columns × 8 rows = 128 ASCII glyphs.
+// The font sheet maps ASCII value → glyph index (0-based).
+// Each glyph occupies (1/16) of sheet width and (1/8) of sheet height.
+//
+// Usage:  hud.drawText({20.f, 60.f}, "HP: 3/5", fontTexID, 16.f);
+// Pass fontTexID = 0 to skip (graceful no-op when no font loaded).
+
+void HUD::drawText(glm::vec2          position,
+                   const std::string& text,
+                   GLuint             fontTexID,
+                   float              glyphW,
+                   float              glyphH,
+                   glm::vec4          colour)
+{
+    if (!m_renderer || fontTexID == 0 || text.empty()) return;
+
+    constexpr int kSheetCols = 16;
+    constexpr int kSheetRows = 8;
+
+    float penX = position.x;
+
+    for (char c : text)
+    {
+        // Map character to glyph index; clamp to printable ASCII range
+        int idx = static_cast<unsigned char>(c);
+        if (idx < 32 || idx > 127) idx = 32;   // fallback to space
+        idx -= 32;                               // sheet starts at ASCII 32
+
+        int col = idx % kSheetCols;
+        int row = idx / kSheetCols;
+
+        glm::vec2 uvMin = {
+            static_cast<float>(col)     / kSheetCols,
+            static_cast<float>(row)     / kSheetRows
+        };
+        glm::vec2 uvMax = {
+            static_cast<float>(col + 1) / kSheetCols,
+            static_cast<float>(row + 1) / kSheetRows
+        };
+
+        m_renderer->drawQuad({ penX, position.y }, { glyphW, glyphH },
+                             fontTexID, colour, 0.f, uvMin, uvMax);
+        penX += glyphW;
+    }
 }
