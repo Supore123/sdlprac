@@ -452,3 +452,11 @@ void GameplayState::processPlayerInput(float dt)
         camPos.y = m_camOffset.y;
         m_ctx->camera->setPosition(camPos);
     }
+    // Pre-load sound effects; gracefully no-ops if the files don't exist yet.
+    m_ctx->resources->loadSoundEffect("jump", "res/audio/jump.wav");
+    m_ctx->resources->loadSoundEffect("land", "res/audio/land.wav");
+        m_ctx->resources->playSound("jump");
+    // Land detection: was airborne last frame, now on ground.
+    if (rb.onGround && !m_wasOnGround)
+        m_ctx->resources->playSound("land");
+    m_wasOnGround = rb.onGround;
