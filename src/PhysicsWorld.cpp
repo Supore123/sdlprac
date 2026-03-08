@@ -1,4 +1,3 @@
-
 #include "PhysicsWorld.h"
 #include "ECS.h"
 #include "Components.h"
@@ -110,22 +109,6 @@ void PhysicsWorld::resolveX(glm::vec2&       position,
             float tileLeft  = static_cast<float>(tx) * ts;
             float tileRight = tileLeft + ts;
 
-            if (velocityX > 0.f)
-            {
-                // Moving right — push left edge of entity to tile's left face
-                position.x = tileLeft - offset.x - size.x;
-            }
-            else if (velocityX < 0.f)
-            {
-                // Moving left — push right edge of entity to tile's right face
-                position.x = tileRight - offset.x;
-            }
-
-            velocityX = 0.f;
-
-            // Recompute left/right for subsequent tile checks
-            left  = position.x + offset.x;
-            right = left + size.x;
         }
     }
 }
@@ -210,3 +193,19 @@ bool PhysicsWorld::aabbOverlap(glm::vec2 aPos, glm::vec2 aSize,
 
     return true;
 }
+            if (velocityX > 0.f)
+            {
+                // Moving right — push right edge flush with tile's left face
+                position.x = tileLeft - offset.x - size.x;
+            }
+            else if (velocityX < 0.f)
+            {
+                // Moving left — push left edge flush with tile's right face
+                position.x = tileRight - offset.x;
+            }
+
+            velocityX = 0.f;
+
+            // Recompute left AND right for subsequent tile checks in this row
+            left  = position.x + offset.x;
+            right = left + size.x;
