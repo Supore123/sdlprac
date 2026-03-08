@@ -360,3 +360,63 @@ void GameplayState::renderFadeOverlay()
     anim.clips["jump"] = jump;
     anim.currentClip   = "idle";
     m_world.add<AnimatorComponent>(m_player, std::move(anim));
+// Tune these two constants to taste:
+static constexpr float k_coyoteTime    = 0.12f;   // seconds of post-ledge grace
+static constexpr float k_jumpBufferTime = 0.10f;  // seconds of pre-land buffer
+void GameplayState::processPlayerInput(float dt)
+{
+    if (m_player == NULL_ENTITY) return;
+
+    auto& rb = m_world.get<RigidbodyComponent>(m_player);
+    auto& pc = m_world.get<PlayerComponent>(m_player);
+
+    // ── Coyote time ──────────────────────────────────────────────────────────
+    // Grace window: player can still jump for a short time after walking off a ledge.
+    if (rb.onGround)
+        m_coyoteTimer = k_coyoteTime;
+    else if (m_coyoteTimer > 0.f)
+        m_coyoteTimer -= dt;
+
+    // ── Jump buffer ──────────────────────────────────────────────────────────
+    // Pre-input: if the player presses jump slightly before landing, still jump.
+    if (m_ctx->input->isActionPressed("confirm"))
+        m_jumpBufferTimer = k_jumpBufferTime;
+    else if (m_jumpBufferTimer > 0.f)
+        m_jumpBufferTimer -= dt;
+
+    // ── Horizontal movement ───────────────────────────────────────────────────
+    float targetVX = 0.f;
+    if (m_ctx->input->isActionDown("left"))
+    {
+        targetVX       = -pc.speed;
+        pc.facingRight = false;
+    }
+    if (m_ctx->input->isActionDown("right"))
+    {
+        targetVX       = pc.speed;
+        pc.facingRight = true;
+    }
+    rb.velocity.x = targetVX;
+
+    // ── Jump — coyote time + buffer combined ──────────────────────────────────
+    bool canJump   = (m_coyoteTimer > 0.f);
+    bool wantsJump = (m_jumpBufferTimer > 0.f);
+    if (canJump && wantsJump)
+    {
+        rb.velocity.y     = -pc.jumpForce;
+        m_coyoteTimer     = 0.f;
+        m_jumpBufferTimer = 0.f;
+        m_ctx->resources->playSound("jump");
+    }
+
+    // Land detection: was airborne last frame, now on ground.
+    if (rb.onGround && !m_wasOnGround)
+        m_ctx->resources->playSound("land");
+    m_wasOnGround = rb.onGround;
+
+    // Flip sprite scale to face the direction of travel
+    auto& tf   = m_world.get<TransformComponent>(m_player);
+    tf.scale.x = pc.facingRight ? 1.f : -1.f;
+
+    (void)dt;
+}
