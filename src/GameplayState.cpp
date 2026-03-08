@@ -420,3 +420,35 @@ void GameplayState::processPlayerInput(float dt)
 
     (void)dt;
 }
+    m_camOffset = { 0.f, 0.f };
+    m_ctx->camera->setPosition({ 0.f, 0.f, 0.f });
+    // Lerp camera position to keep the player centred on screen.
+    if (m_player != NULL_ENTITY && m_world.has<TransformComponent>(m_player))
+    {
+        auto& tf = m_world.get<TransformComponent>(m_player);
+
+        // Target: centre the player sprite on screen
+        constexpr float k_screenW  = 1280.f;
+        constexpr float k_screenH  = 720.f;
+        constexpr float k_lerpSpeed = 6.f;   // higher = snappier follow
+
+        float targetX = tf.position.x - k_screenW * 0.5f;
+        float targetY = tf.position.y - k_screenH * 0.5f;
+
+        // Clamp so the camera doesn't scroll past level edges
+        float levelW = static_cast<float>(k_cols * k_tileSize);
+        float levelH = static_cast<float>(k_rows * k_tileSize);
+        targetX = std::clamp(targetX, 0.f, std::max(0.f, levelW - k_screenW));
+        targetY = std::clamp(targetY, 0.f, std::max(0.f, levelH - k_screenH));
+
+        // Lerp current camera offset toward target
+        m_camOffset.x += (targetX - m_camOffset.x) * k_lerpSpeed * dt;
+        m_camOffset.y += (targetY - m_camOffset.y) * k_lerpSpeed * dt;
+
+        // Push into the camera as a position offset — the ortho projection stays
+        // fixed at (0,0)→(1280,720); we shift the view matrix instead.
+        glm::vec3 camPos = m_ctx->camera->getPosition();
+        camPos.x = m_camOffset.x;
+        camPos.y = m_camOffset.y;
+        m_ctx->camera->setPosition(camPos);
+    }

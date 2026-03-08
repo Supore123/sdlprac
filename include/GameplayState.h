@@ -63,3 +63,4 @@ private:
 };
     float m_coyoteTimer     = 0.f;   // counts down after leaving ground
     float m_jumpBufferTimer = 0.f;   // counts down after jump pressed in air
+    glm::vec2 m_camOffset   = { 0.f, 0.f };  // current lerped camera scroll
