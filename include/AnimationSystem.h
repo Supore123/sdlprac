@@ -41,3 +41,11 @@ public:
     /** Advance all AnimatorComponents and sync UVs to SpriteComponents. */
     void update(World& world, float dt) const;
 
+
+    /**
+     * Request a clip change on an AnimatorComponent.
+     * If the clip is already playing it is not restarted.
+     * No-op if the clip name doesn't exist in the clips map.
+     */
+    static void play(struct AnimatorComponent& anim, const std::string& clipName);
+};

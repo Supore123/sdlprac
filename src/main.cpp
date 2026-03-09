@@ -129,3 +129,69 @@ int main()
 
     gsm.push(std::make_unique<SplashState>(&ctx));
 
+    // ─────────────────────────────────────────────────────────────────────── //
+    //  Main Game Loop                                                         //
+    // ─────────────────────────────────────────────────────────────────────── //
+
+    bool   running = true;
+    Uint64 now     = SDL_GetPerformanceCounter();
+    Uint64 last    = now;   // Seeded correctly to avoid dt spike
+    double freq    = static_cast<double>(SDL_GetPerformanceFrequency());
+
+    while (running)
+    {
+        last = now;
+        now  = SDL_GetPerformanceCounter();
+        float dt = static_cast<float>(static_cast<double>(now - last) / freq);
+
+        // Clear single-frame flags BEFORE processing new events
+        inputManager.update();
+        gsm.processTransition();
+
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+            // Handle resizing directly in the event loop
+            if (e.type == SDL_WINDOWEVENT &&
+                e.window.event == SDL_WINDOWEVENT_RESIZED)
+            {
+                float w = static_cast<float>(e.window.data1);
+                float h = static_cast<float>(e.window.data2);
+                camera.setOrthoSize(w, h);
+                camera.setAspect(w / h);
+                glViewport(0, 0, e.window.data1, e.window.data2);
+            }
+
+            // Process input events
+            inputManager.processEvent(e);
+            gsm.handleEvent(e);
+        }
+
+        if (inputManager.quit() || inputManager.isActionPressed("back"))
+            running = false;
+
+        gsm.update(dt);
+        gsm.render();
+        SDL_GL_SwapWindow(window);
+
+        if (gsm.isEmpty())
+            running = false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────── //
+    //  Cleanup and Exit                                                       //
+    // ─────────────────────────────────────────────────────────────────────── //
+
+    // Shut down engine subsystems while GL Context is still alive
+    renderer.shutdown();
+    resourceManager.releaseAll();
+    shaderManager.deleteAll();
+
+    // Destroy SDL and GL Context
+    SDL_GL_DeleteContext(glContext);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    
+    return EXIT_SUCCESS;
+} // End of main()
+

@@ -42,3 +42,35 @@ struct PlayerProjectileComponent
     float     lifetime  = 1.5f;
     float     damage    = 1.f;
 };
+// ── System ────────────────────────────────────────────────────────────────────
+class AttackSystem
+{
+public:
+    // Fired when a melee attack hits an enemy
+    std::function<void(Entity player, Entity enemy)> onMeleeHit;
+    // Fired when a player projectile hits an enemy
+    std::function<void(Entity proj,   Entity enemy)> onProjectileHit;
+
+    void update(World& world, Entity playerEntity, bool attackPressed, float dt);
+
+    void render(World& world, Entity playerEntity,
+                Renderer2D& renderer, const Camera& cam,
+                GLuint fxSwordTex, GLuint fxHitTex,
+                GLuint fxShurikenTex, GLuint fxLaserTex);
+
+    // Call once in spawnPlayer after adding AttackComponent
+    static void registerClips(World& world, Entity player, CharacterType type);
+
+private:
+    void fireProjectile(World& world, Entity player,
+                        CharacterType type,
+                        GLuint shurikenTex, GLuint laserTex);
+    void checkMeleeHits(World& world, Entity player);
+    void updateProjectiles(World& world, float dt);
+
+    // Cached FX texture IDs set during render()
+    GLuint m_fxSwordTex    = 0;
+    GLuint m_fxShurikenTex = 0;
+    GLuint m_fxLaserTex    = 0;
+    GLuint m_fxHitTex      = 0;
+};

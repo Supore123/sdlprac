@@ -187,3 +187,30 @@ void PhysicsWorld::resolveY(glm::vec2&       position,
     }
 }
 
+// -------------------------------------------------------------------------- //
+//  Static utility                                                             //
+// -------------------------------------------------------------------------- //
+
+bool PhysicsWorld::aabbOverlap(glm::vec2 aPos, glm::vec2 aSize,
+                                glm::vec2 bPos, glm::vec2 bSize,
+                                glm::vec2& penetration)
+{
+    float aRight  = aPos.x + aSize.x;
+    float aBottom = aPos.y + aSize.y;
+    float bRight  = bPos.x + bSize.x;
+    float bBottom = bPos.y + bSize.y;
+
+    if (aPos.x >= bRight  || bPos.x >= aRight  ||
+        aPos.y >= bBottom || bPos.y >= aBottom)
+        return false;
+
+    float overlapX = std::min(aRight,  bRight)  - std::max(aPos.x, bPos.x);
+    float overlapY = std::min(aBottom, bBottom) - std::max(aPos.y, bPos.y);
+
+    penetration = (overlapX < overlapY)
+        ? glm::vec2(overlapX * (aPos.x < bPos.x ? -1.f : 1.f), 0.f)
+        : glm::vec2(0.f, overlapY * (aPos.y < bPos.y ? -1.f : 1.f));
+
+    return true;
+}
+

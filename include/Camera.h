@@ -125,3 +125,35 @@ public:
     // --- helpers ----------------------------------------------------------
     float getOrthoWidth() const { return m_orthoWidth; }
     float getOrthoHeight() const { return m_orthoHeight; }
+private:
+    Mode m_mode = Mode::Perspective;
+
+    // Perspective params
+    float m_fov    = 45.f;
+    float m_aspect = 16.f / 9.f;
+    float m_near   = 0.1f;
+    float m_far    = 1000.f;
+
+    // Ortho params
+    float m_orthoWidth  = 1280.f;
+    float m_orthoHeight = 720.f;
+
+    // View params
+    glm::vec3 m_position = { 0.f,  0.f,  3.f };
+    glm::vec3 m_front    = { 0.f,  0.f, -1.f };
+    glm::vec3 m_up       = { 0.f,  1.f,  0.f };
+    glm::vec3 m_right    = { 1.f,  0.f,  0.f };
+
+    // Euler angles (degrees) for FPS mode
+    float m_yaw   = -90.f;
+    float m_pitch =   0.f;
+    bool  m_constrainPitch = true;
+
+    // Cached matrices
+    glm::mat4 m_view       = glm::mat4(1.f);
+    glm::mat4 m_projection = glm::mat4(1.f);
+
+    void recalculateView();
+    void recalculateProjection();
+    void updateVectors();   // recompute front/right/up from yaw+pitch
+};

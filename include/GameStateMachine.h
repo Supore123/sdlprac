@@ -68,3 +68,15 @@ public:
 
     bool        isEmpty()       const { return m_stack.empty(); }
     std::string currentName()   const;
+private:
+    enum class TransitionType { None, Push, Pop, Change };
+
+    struct PendingTransition
+    {
+        TransitionType              type  = TransitionType::None;
+        std::unique_ptr<IGameState> state = nullptr;
+    };
+
+    std::stack<std::unique_ptr<IGameState>> m_stack;
+    PendingTransition                       m_pending;
+};

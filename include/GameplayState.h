@@ -82,3 +82,15 @@ private:
     GLuint m_fxLaserTex    = 0;
     GLuint m_fxHitTex      = 0;
     GLuint m_fontTexID     = 0;
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    void buildLevel();
+    void spawnPlayer();
+    void processPlayerInput(float dt);
+    void updateAnimatorState();
+    void renderEntities();
+    void renderFadeOverlay();
+    void switchCharacter(CharacterType type);
+    void damagePlayer(int amount);
+    void spawnPowerUp(World& world, glm::vec2 position);
+    void applyPowerUp(const PowerUpComponent& pu);
+};
