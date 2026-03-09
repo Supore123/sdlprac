@@ -16,3 +16,6 @@
 #include "ShaderManager.h"
 #include "ResourceManager.h"
 #include "InputManager.h"
+#include "GameStateMachine.h"
+#include "Camera.h"
+#include "Renderer2D.h"

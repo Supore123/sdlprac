@@ -233,3 +233,103 @@ void Renderer2D::end()
     glUseProgram(0);
 }
 
+void Renderer2D::flush()
+{
+    if (m_vertices.empty())
+        return;
+
+    // Upload CPU buffer to GPU
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,
+                    static_cast<GLsizeiptr>(m_vertices.size() * sizeof(Vertex)),
+                    m_vertices.data());
+
+    // Bind texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_currentTexture);
+
+    GLsizei indexCount = static_cast<GLsizei>((m_vertices.size() / 4) * 6);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+
+    glBindVertexArray(0);
+
+    m_stats.drawCalls++;
+    m_stats.quadCount += static_cast<uint32_t>(m_vertices.size() / 4);
+
+    m_vertices.clear();
+    m_currentTexture = 0;
+}
+
+void Renderer2D::createWhiteTexture()
+{
+    glGenTextures(1, &m_whiteTexture);
+    glBindTexture(GL_TEXTURE_2D, m_whiteTexture);
+
+    uint32_t white = 0xFFFFFFFF;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, &white);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint Renderer2D::buildShader(ShaderManager& sm)
+{
+    // Compile manually from in-memory strings rather than files
+    // Then register the result in ShaderManager under a reserved name
+
+    auto compileStage = [](GLenum type, const char* src) -> GLuint
+    {
+        GLuint id = glCreateShader(type);
+        glShaderSource(id, 1, &src, nullptr);
+        glCompileShader(id);
+
+        GLint ok = 0;
+        glGetShaderiv(id, GL_COMPILE_STATUS, &ok);
+        if (!ok)
+        {
+            char log[512];
+            glGetShaderInfoLog(id, sizeof(log), nullptr, log);
+            std::cerr << "[Renderer2D] Shader compile error:\n" << log << "\n";
+            glDeleteShader(id);
+            return 0;
+        }
+        return id;
+    };
+
+    GLuint vert = compileStage(GL_VERTEX_SHADER,   k_vertSrc);
+    GLuint frag = compileStage(GL_FRAGMENT_SHADER, k_fragSrc);
+    if (!vert || !frag)
+    {
+        if (vert) glDeleteShader(vert);
+        if (frag) glDeleteShader(frag);
+        return 0;
+    }
+
+    GLuint prog = glCreateProgram();
+    glAttachShader(prog, vert);
+    glAttachShader(prog, frag);
+    glLinkProgram(prog);
+    glDeleteShader(vert);
+    glDeleteShader(frag);
+
+    GLint ok = 0;
+    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+    if (!ok)
+    {
+        char log[512];
+        glGetProgramInfoLog(prog, sizeof(log), nullptr, log);
+        std::cerr << "[Renderer2D] Program link error:\n" << log << "\n";
+        glDeleteProgram(prog);
+        return 0;
+    }
+
+    // Register in ShaderManager so other systems can reference or override it
+    // We inject the already-linked ID directly into the cache
+    (void)sm; // sm available for future override registration
+    std::cout << "[Renderer2D] Built-in shader compiled (ID " << prog << ").\n";
+    return prog;
+}
+

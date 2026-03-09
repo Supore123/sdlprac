@@ -35,3 +35,36 @@ public:
 
     GameStateMachine(const GameStateMachine&)            = delete;
     GameStateMachine& operator=(const GameStateMachine&) = delete;
+    // ------------------------------------------------------------------ //
+    //  Transition requests (deferred until processTransition())           //
+    // ------------------------------------------------------------------ //
+
+    /** Push a new state on top of the stack. */
+    void push(std::unique_ptr<IGameState> state);
+
+    /** Pop the top state from the stack. */
+    void pop();
+
+    /**
+     * Replace the current top state with a new one.
+     * Equivalent to pop() + push() in a single deferred step.
+     */
+    void change(std::unique_ptr<IGameState> state);
+
+    // ------------------------------------------------------------------ //
+    //  Per-frame driver — call these in order from your main loop         //
+    // ------------------------------------------------------------------ //
+
+    /** Apply any pending transition before the frame begins. */
+    void processTransition();
+
+    void handleEvent(SDL_Event& e);
+    void update(float dt);
+    void render();
+
+    // ------------------------------------------------------------------ //
+    //  Queries                                                             //
+    // ------------------------------------------------------------------ //
+
+    bool        isEmpty()       const { return m_stack.empty(); }
+    std::string currentName()   const;

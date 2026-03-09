@@ -104,3 +104,77 @@ public:
 
     size_t entityCount() const { return m_alive.size(); }
 
+    // ── Component operations ─────────────────────────────────────────────────
+
+    /** Add (or overwrite) a component on entity e. Returns a ref to it. */
+    template<typename T>
+    T& add(Entity e, T component = T{})
+    {
+        return pool<T>().add(e, std::move(component));
+    }
+
+    /** Get a reference to an existing component. Throws if not present. */
+    template<typename T>
+    T& get(Entity e)
+    {
+        return pool<T>().get(e);
+    }
+
+    /** Returns true if entity has component T. */
+    template<typename T>
+    bool has(Entity e) const
+    {
+        auto it = m_pools.find(std::type_index(typeid(T)));
+        return it != m_pools.end() && it->second->has(e);
+    }
+
+    /** Remove component T from entity e (no-op if absent). */
+    template<typename T>
+    void remove(Entity e)
+    {
+        auto it = m_pools.find(std::type_index(typeid(T)));
+        if (it != m_pools.end())
+            it->second->remove(e);
+    }
+
+    // ── Views ────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns all live entities that have ALL of the listed component types.
+     *
+     *   for (Entity e : world.view<Transform, Rigidbody, Collider>()) { ... }
+     */
+    template<typename T, typename... Rest>
+    std::vector<Entity> view()
+    {
+        std::vector<Entity> result;
+        result.reserve(m_alive.size());
+        for (Entity e : m_alive)
+            if (has<T>(e) && (has<Rest>(e) && ...))
+                result.push_back(e);
+        return result;
+    }
+
+    /** All live entities, regardless of components. */
+    const std::vector<Entity>& all() const { return m_alive; }
+
+private:
+    Entity                   m_nextId = 1;
+    std::vector<Entity>      m_alive;
+    std::unordered_map<std::type_index,
+                       std::unique_ptr<IComponentPool>> m_pools;
+
+    template<typename T>
+    ComponentPool<T>& pool()
+    {
+        auto key = std::type_index(typeid(T));
+        auto it  = m_pools.find(key);
+        if (it == m_pools.end())
+        {
+            m_pools[key] = std::make_unique<ComponentPool<T>>();
+            it = m_pools.find(key);
+        }
+        return *static_cast<ComponentPool<T>*>(it->second.get());
+    }
+};
+

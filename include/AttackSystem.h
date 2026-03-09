@@ -35,3 +35,10 @@ struct AttackComponent
     float     fxTimer          = 0.f;
     int       fxFrame          = 0;
 };
+// ── Player projectile (separate from enemy projectile) ───────────────────────
+struct PlayerProjectileComponent
+{
+    glm::vec2 velocity  = { 400.f, 0.f };
+    float     lifetime  = 1.5f;
+    float     damage    = 1.f;
+};

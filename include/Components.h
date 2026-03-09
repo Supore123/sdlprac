@@ -84,3 +84,37 @@ struct AnimatorComponent
     bool        playing      = true;
 };
 
+// ── PlayerComponent ──────────────────────────────────────────────────────────
+// Gameplay-specific data for the player-controlled entity.
+struct PlayerComponent
+{
+    float speed      = 220.f;   // horizontal pixels/second
+    float jumpForce  = 520.f;   // upward velocity applied on jump (pixels/s)
+    int   health     = 3;
+    int   maxHealth  = 3;
+    bool  facingRight = true;
+    bool  jumpQueued  = false;  // set by input, consumed by physics
+};
+
+// ── TagComponent ─────────────────────────────────────────────────────────────
+// Lightweight string label for finding specific entities (e.g. "player").
+struct TagComponent
+{
+    std::string tag;
+};
+
+// ── DeathComponent ───────────────────────────────────────────────────────────
+// Added when entity is dying. System destroys entity when timer expires.
+struct DeathComponent
+{
+    float timer = 0.3f;   // seconds before despawn
+};
+
+// ── PowerUpComponent ─────────────────────────────────────────────────────────
+enum class PowerUpType { Health, Speed, Invincibility };
+struct PowerUpComponent
+{
+    PowerUpType type     = PowerUpType::Health;
+    float       duration = 5.f;   // seconds (for temp buffs), 0 = instant
+};
+

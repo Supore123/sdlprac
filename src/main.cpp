@@ -96,3 +96,36 @@ int main()
     inputManager.bindAction("left",    SDL_SCANCODE_A);
     inputManager.bindAction("right",   SDL_SCANCODE_D);
 
+    // ─────────────────────────────────────────────────────────────────────── //
+    //  Camera & Renderer Setup                                                //
+    // ─────────────────────────────────────────────────────────────────────── //
+    
+    Camera     camera;
+    Renderer2D renderer;
+
+    camera.setMode(Camera::Mode::Orthographic);
+    camera.setOrthoSize(1280.f, 720.f);
+
+    if (!renderer.init(shaderManager))
+    {
+        std::cerr << "[main] Renderer2D init failed.\n";
+        SDL_GL_DeleteContext(glContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────── //
+    //  EngineContext Setup & Push Initial State                               //
+    // ─────────────────────────────────────────────────────────────────────── //
+
+    EngineContext ctx;
+    ctx.shaders   = &shaderManager;
+    ctx.resources = &resourceManager;
+    ctx.input     = &inputManager;
+    ctx.gsm       = &gsm;
+    ctx.camera    = &camera;    
+    ctx.renderer  = &renderer;  
+
+    gsm.push(std::make_unique<SplashState>(&ctx));
+

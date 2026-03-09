@@ -49,3 +49,79 @@ public:
     // ------------------------------------------------------------------ //
 
     Camera();
+    // ------------------------------------------------------------------ //
+    //  Mode                                                                //
+    // ------------------------------------------------------------------ //
+
+    void setMode(Mode mode);
+    Mode getMode() const { return m_mode; }
+
+    // ------------------------------------------------------------------ //
+    //  Projection setup                                                    //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Configure a perspective projection.
+     * @param fovDegrees   Vertical field of view in degrees
+     * @param aspect       width / height
+     * @param nearPlane    Near clip distance (> 0)
+     * @param farPlane     Far clip distance
+     */
+    void setPerspective(float fovDegrees, float aspect,
+                        float nearPlane = 0.1f, float farPlane = 1000.f);
+
+    /**
+     * Configure an orthographic projection sized to pixel coordinates.
+     * Call this whenever the window is resized.
+     * Origin is top-left; +Y goes down (matches SDL/screen conventions).
+     */
+    void setOrthoSize(float width, float height);
+
+    /** Update the aspect ratio after a window resize (perspective only). */
+    void setAspect(float aspect);
+
+    // ------------------------------------------------------------------ //
+    //  View (look-at)                                                      //
+    // ------------------------------------------------------------------ //
+
+    void setPosition(const glm::vec3& pos);
+    void setTarget  (const glm::vec3& target);
+    void setUp      (const glm::vec3& up);
+
+    const glm::vec3& getPosition() const { return m_position; }
+    const glm::vec3& getFront()    const { return m_front;    }
+    const glm::vec3& getRight()    const { return m_right;    }
+
+    // ------------------------------------------------------------------ //
+    //  FPS controls                                                        //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Rotate camera from mouse delta (pixels).
+     * @param sensitivity  Degrees-per-pixel scaling factor (default 0.1)
+     */
+    void processMouse(float xDelta, float yDelta,
+                      float sensitivity = 0.1f);
+
+    /**
+     * Translate camera along its local axes.
+     * @param speed  Units per second
+     */
+    void processKeyboard(MoveDir direction, float dt, float speed = 5.f);
+
+    /** Clamp pitch to ±89° to avoid gimbal flip. Enabled by default. */
+    void setConstrainPitch(bool constrain) { m_constrainPitch = constrain; }
+
+    // ------------------------------------------------------------------ //
+    //  Matrix accessors                                                    //
+    // ------------------------------------------------------------------ //
+
+    const glm::mat4& getView()       const { return m_view;       }
+    const glm::mat4& getProjection() const { return m_projection; }
+
+    /** VP = Projection * View — convenience for shaders that want one matrix. */
+    glm::mat4 getViewProjection() const { return m_projection * m_view; }
+
+    // --- helpers ----------------------------------------------------------
+    float getOrthoWidth() const { return m_orthoWidth; }
+    float getOrthoHeight() const { return m_orthoHeight; }

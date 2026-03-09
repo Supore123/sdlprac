@@ -20,3 +20,12 @@ class Renderer2D;
  * as member variables — not here. This keeps state lifetimes clean and avoids
  * shared mutable state between states.
  */
+struct EngineContext
+{
+    ShaderManager*    shaders   = nullptr;
+    ResourceManager*  resources = nullptr;
+    InputManager*     input     = nullptr;
+    GameStateMachine* gsm       = nullptr;
+    Camera*           camera    = nullptr;
+    Renderer2D*       renderer  = nullptr;
+};

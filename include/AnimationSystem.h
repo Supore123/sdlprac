@@ -37,3 +37,7 @@ class AnimationSystem
 {
 public:
 
+
+    /** Advance all AnimatorComponents and sync UVs to SpriteComponents. */
+    void update(World& world, float dt) const;
+

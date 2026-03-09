@@ -76,3 +76,114 @@ void PhysicsWorld::update(World& world, const Tilemap& tilemap, float dt)
     }
 }
 
+// -------------------------------------------------------------------------- //
+//  Private helpers                                                            //
+// -------------------------------------------------------------------------- //
+
+/**
+ * Horizontal tile collision.
+ * Moves the collider, then for every solid tile it overlaps pushes it out
+ * along X only.
+ */
+void PhysicsWorld::resolveX(glm::vec2&       position,
+                             const glm::vec2& offset,
+                             const glm::vec2& size,
+                             float&           velocityX,
+                             const Tilemap&   tm) const
+{
+    float ts = static_cast<float>(tm.tileSize());
+
+    // AABB world corners after integration
+    float left   = position.x + offset.x;
+    float right  = left + size.x;
+    float top    = position.y + offset.y;
+    float bottom = top + size.y - 1.f;
+
+    int tileMinX = static_cast<int>(std::floor(left   / ts));
+    int tileMaxX = static_cast<int>(std::floor(right  / ts));
+    int tileMinY = static_cast<int>(std::floor(top    / ts));
+    int tileMaxY = static_cast<int>(std::floor(bottom / ts));
+
+    for (int ty = tileMinY; ty <= tileMaxY; ++ty)
+    {
+        for (int tx = tileMinX; tx <= tileMaxX; ++tx)
+        {
+            if (!tm.isSolid(tx, ty)) continue;
+
+            float tileLeft  = static_cast<float>(tx) * ts;
+            float tileRight = tileLeft + ts;
+
+            // push out along X only
+            if (velocityX > 0.f)
+            {
+                // moving right — align right edge with tile left face
+                position.x = tileLeft - offset.x - size.x;
+            }
+            else if (velocityX < 0.f)
+            {
+                // moving left — align left edge with tile right face
+                position.x = tileRight - offset.x;
+            }
+            velocityX = 0.f;
+
+            // recompute AABB for any further tiles on this row
+            left  = position.x + offset.x;
+            right = left + size.x;
+        }
+    }
+}
+
+/**
+ * Vertical tile collision.
+ * Moves the collider, then resolves solid tile overlaps along Y.
+ * Sets onGround = true when landing on a tile from above.
+ */
+void PhysicsWorld::resolveY(glm::vec2&       position,
+                             const glm::vec2& offset,
+                             const glm::vec2& size,
+                             float&           velocityY,
+                             bool&            onGround,
+                             const Tilemap&   tm) const
+{
+    float ts = static_cast<float>(tm.tileSize());
+
+    float left   = position.x + offset.x;
+    float right  = left + size.x - 1.f;
+    float top    = position.y + offset.y;
+    float bottom = top + size.y;
+
+    int tileMinX = static_cast<int>(std::floor(left   / ts));
+    int tileMaxX = static_cast<int>(std::floor(right  / ts));
+    int tileMinY = static_cast<int>(std::floor(top    / ts));
+    int tileMaxY = static_cast<int>(std::floor(bottom / ts));
+
+    for (int ty = tileMinY; ty <= tileMaxY; ++ty)
+    {
+        for (int tx = tileMinX; tx <= tileMaxX; ++tx)
+        {
+            if (!tm.isSolid(tx, ty)) continue;
+
+            float tileTop    = static_cast<float>(ty) * ts;
+            float tileBottom = tileTop + ts;
+
+            if (velocityY > 0.f)
+            {
+                // Falling — land on top of tile
+                position.y = tileTop - offset.y - size.y;
+                onGround   = true;
+            }
+            else if (velocityY < 0.f)
+            {
+                // Jumping — hit ceiling
+                position.y = tileBottom - offset.y;
+            }
+
+            velocityY = 0.f;
+
+            // Recompute top/bottom for subsequent checks
+            top    = position.y + offset.y;
+            bottom = top + size.y;
+        }
+    }
+}
+
