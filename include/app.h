@@ -12,3 +12,7 @@
 // translation units can include to get the complete EngineContext definition
 // along with the concrete system headers they most often need. This avoids
 // each state having to manually repeat the same five includes.
+#include "EngineContext.h"   // struct EngineContext
+#include "ShaderManager.h"
+#include "ResourceManager.h"
+#include "InputManager.h"

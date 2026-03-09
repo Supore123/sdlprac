@@ -10,3 +10,13 @@ class InputManager;
 class GameStateMachine;
 class Camera;
 class Renderer2D;
+/**
+ * EngineContext
+ *
+ * Non-owning pointers to every engine subsystem. Passed to every IGameState.
+ * All six pointers MUST be assigned before gsm.push() is called.
+ *
+ * Per-state data (World, Tilemap, PhysicsWorld) lives inside each GameState
+ * as member variables — not here. This keeps state lifetimes clean and avoids
+ * shared mutable state between states.
+ */

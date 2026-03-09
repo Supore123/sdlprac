@@ -27,3 +27,11 @@
  * start of the next processTransition() call (once per frame), preventing
  * mid-frame corruption while iterating through update/render.
  */
+class GameStateMachine
+{
+public:
+    GameStateMachine()  = default;
+    ~GameStateMachine() = default;
+
+    GameStateMachine(const GameStateMachine&)            = delete;
+    GameStateMachine& operator=(const GameStateMachine&) = delete;

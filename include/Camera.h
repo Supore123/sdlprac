@@ -36,3 +36,16 @@
  *   cam.processMouse(xDelta, yDelta);        // call with InputManager delta
  *   cam.processKeyboard(dir, dt);
  */
+class Camera
+{
+public:
+    enum class Mode { Perspective, Orthographic };
+
+    // Movement directions for processKeyboard()
+    enum class MoveDir { Forward, Backward, Left, Right, Up, Down };
+
+    // ------------------------------------------------------------------ //
+    //  Construction                                                        //
+    // ------------------------------------------------------------------ //
+
+    Camera();

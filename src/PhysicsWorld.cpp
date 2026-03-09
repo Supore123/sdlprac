@@ -47,3 +47,32 @@ void PhysicsWorld::update(World& world, const Tilemap& tilemap, float dt)
                      rb.onGround, tilemap);
     }
 
+    // ── Trigger overlap detection ─────────────────────────────────────────────
+    if (onOverlap)
+    {
+        auto triggers = world.view<TransformComponent, BoxColliderComponent>();
+
+        for (size_t i = 0; i < triggers.size(); ++i)
+        {
+            Entity a  = triggers[i];
+            auto& tfa = world.get<TransformComponent>(a);
+            auto& bca = world.get<BoxColliderComponent>(a);
+            if (!bca.isTrigger) continue;
+
+            glm::vec2 aPos  = tfa.position + bca.offset;
+
+            for (size_t j = i + 1; j < triggers.size(); ++j)
+            {
+                Entity b  = triggers[j];
+                auto& tfb = world.get<TransformComponent>(b);
+                auto& bcb = world.get<BoxColliderComponent>(b);
+
+                glm::vec2 bPos = tfb.position + bcb.offset;
+                glm::vec2 pen;
+                if (aabbOverlap(aPos, bca.size, bPos, bcb.size, pen))
+                    onOverlap(a, b);
+            }
+        }
+    }
+}
+

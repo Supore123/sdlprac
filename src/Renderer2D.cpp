@@ -147,3 +147,89 @@ void Renderer2D::shutdown()
     m_initialised = false;
 }
 
+void Renderer2D::begin(const Camera& camera)
+{
+    glUseProgram(m_shader);
+    glUniformMatrix4fv(
+        glGetUniformLocation(m_shader, "uViewProjection"),
+        1, GL_FALSE, glm::value_ptr(camera.getViewProjection()));
+
+    m_vertices.clear();
+    m_currentTexture = 0;
+}
+
+void Renderer2D::drawQuad(const glm::vec2& position,
+                          const glm::vec2& size,
+                          GLuint           textureID,
+                          const glm::vec4& tint,
+                          float            rotation,
+                          const glm::vec2& uvMin,
+                          const glm::vec2& uvMax)
+{
+    // Flush whenever texture changes
+    if (m_currentTexture != 0 && textureID != m_currentTexture)
+        flush();
+
+    m_currentTexture = textureID;
+
+    // Flush if batch is full
+    if (m_vertices.size() + 4 > MAX_VERTICES)
+        flush();
+
+    // Build a local-space quad centred at origin, then transform
+    glm::vec2 halfSize = size * 0.5f;
+    glm::vec2 centre   = position + halfSize;
+
+    // Local corners: TL, TR, BR, BL
+    std::array<glm::vec2, 4> corners = {{
+        { -halfSize.x, -halfSize.y },
+        {  halfSize.x, -halfSize.y },
+        {  halfSize.x,  halfSize.y },
+        { -halfSize.x,  halfSize.y }
+    }};
+
+    // Apply rotation if needed
+    if (rotation != 0.f)
+    {
+        float rad = glm::radians(rotation);
+        float c   = std::cos(rad);
+        float s   = std::sin(rad);
+
+        for (auto& corner : corners)
+        {
+            float rx = corner.x * c - corner.y * s;
+            float ry = corner.x * s + corner.y * c;
+            corner = { rx, ry };
+        }
+    }
+
+    // Translate to world position
+    for (auto& corner : corners)
+        corner += centre;
+
+    // UV corners: TL, TR, BR, BL
+    std::array<glm::vec2, 4> uvs = {{
+        { uvMin.x, uvMin.y },
+        { uvMax.x, uvMin.y },
+        { uvMax.x, uvMax.y },
+        { uvMin.x, uvMax.y }
+    }};
+
+    for (int i = 0; i < 4; ++i)
+        m_vertices.push_back({ corners[i], uvs[i], tint });
+}
+
+void Renderer2D::drawQuad(const glm::vec2& position,
+                          const glm::vec2& size,
+                          const glm::vec4& colour,
+                          float            rotation)
+{
+    drawQuad(position, size, m_whiteTexture, colour, rotation);
+}
+
+void Renderer2D::end()
+{
+    flush();
+    glUseProgram(0);
+}
+

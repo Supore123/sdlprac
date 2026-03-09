@@ -78,3 +78,21 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // ─────────────────────────────────────────────────────────────────────── //
+    //  Engine systems (ShaderManager–InputManager were already here)          //
+    // ─────────────────────────────────────────────────────────────────────── //
+
+    ShaderManager    shaderManager;
+    GameStateMachine gsm;
+    ResourceManager  resourceManager;
+    InputManager     inputManager;
+
+    resourceManager.initAudio();
+
+    inputManager.bindAction("confirm", SDL_SCANCODE_SPACE);
+    inputManager.bindAction("back",    SDL_SCANCODE_ESCAPE);
+    inputManager.bindAction("up",      SDL_SCANCODE_W);
+    inputManager.bindAction("down",    SDL_SCANCODE_S);
+    inputManager.bindAction("left",    SDL_SCANCODE_A);
+    inputManager.bindAction("right",   SDL_SCANCODE_D);
+

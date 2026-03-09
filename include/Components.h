@@ -57,3 +57,30 @@ struct BoxColliderComponent
     bool      isTrigger = false;
 };
 
+// ── Animation ────────────────────────────────────────────────────────────────
+
+struct AnimationFrame
+{
+    glm::vec2 uvMin = { 0.f, 0.f };
+    glm::vec2 uvMax = { 1.f, 1.f };
+};
+
+struct AnimationClip
+{
+    std::string                  name;
+    std::vector<AnimationFrame>  frames;
+    float                        fps  = 8.f;
+    bool                         loop = true;
+};
+
+// AnimatorComponent — holds all clips for one entity.
+// AnimationSystem updates currentFrame and writes back to SpriteComponent.
+struct AnimatorComponent
+{
+    std::unordered_map<std::string, AnimationClip> clips;
+    std::string currentClip;
+    int         currentFrame = 0;
+    float       timer        = 0.f;
+    bool        playing      = true;
+};
+

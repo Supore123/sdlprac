@@ -27,3 +27,13 @@ struct EngineContext;
  *   1 / 2 / 3   Switch character (Knight / Ninja / Robot)
  *   ESC         Return to previous state
  */
+class GameplayState : public IGameState
+{
+public:
+    explicit GameplayState(EngineContext* ctx);
+    void onEnter()                 override;
+    void onExit()                  override;
+    void handleEvent(SDL_Event& e) override;
+    void update(float dt)          override;
+    void render()                  override;
+    std::string getName() const    override { return "GameplayState"; }

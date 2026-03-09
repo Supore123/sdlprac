@@ -33,3 +33,7 @@
 
 #include <string>
 class World;
+class AnimationSystem
+{
+public:
+
