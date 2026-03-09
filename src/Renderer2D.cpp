@@ -134,3 +134,16 @@ bool Renderer2D::init(ShaderManager& shaderManager)
     return true;
 }
 
+void Renderer2D::shutdown()
+{
+    if (!m_initialised) return;
+
+    glDeleteVertexArrays(1, &m_vao);
+    glDeleteBuffers(1, &m_vbo);
+    glDeleteBuffers(1, &m_ibo);
+    glDeleteTextures(1, &m_whiteTexture);
+
+    m_vao = m_vbo = m_ibo = m_whiteTexture = 0;
+    m_initialised = false;
+}
+

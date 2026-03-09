@@ -37,3 +37,23 @@ struct SpriteComponent
     int       layer     = 0;            // higher = drawn on top
 };
 
+// ── RigidbodyComponent ───────────────────────────────────────────────────────
+// Drives kinematic motion. PhysicsWorld reads/writes velocity and onGround.
+struct RigidbodyComponent
+{
+    glm::vec2 velocity     = { 0.f, 0.f };
+    float     gravityScale = 1.f;
+    bool      onGround     = false;
+    bool      useGravity   = true;
+};
+
+// ── BoxColliderComponent ─────────────────────────────────────────────────────
+// Axis-aligned bounding box in LOCAL space (relative to TransformComponent).
+// isTrigger: collisions are detected but not resolved (overlap callbacks only).
+struct BoxColliderComponent
+{
+    glm::vec2 offset    = { 0.f, 0.f };   // local offset from transform.position
+    glm::vec2 size      = { 32.f, 32.f };
+    bool      isTrigger = false;
+};
+

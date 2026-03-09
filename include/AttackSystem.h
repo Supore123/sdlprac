@@ -11,3 +11,5 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <functional>
+// ── Character type ────────────────────────────────────────────────────────────
+enum class CharacterType { Knight, Ninja, Robot };

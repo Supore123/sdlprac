@@ -14,3 +14,16 @@
 #include <string>
 
 struct EngineContext;
+/**
+ * GameplayState
+ *
+ * Self-contained platformer level. Owns its own ECS World, Tilemap,
+ * PhysicsWorld, AnimationSystem, HUD, EnemySystem, and AttackSystem.
+ *
+ * Controls:
+ *   A / D       Walk left / right
+ *   Space       Jump (coyote time + jump buffer)
+ *   J           Attack
+ *   1 / 2 / 3   Switch character (Knight / Ninja / Robot)
+ *   ESC         Return to previous state
+ */
