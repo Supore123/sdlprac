@@ -1,7 +1,3 @@
-#pragma once
-
-#include <string>
-class World;
 
 /**
  * AnimationSystem
@@ -26,18 +22,14 @@ class World;
  *
  * ── Switching clips ──────────────────────────────────────────────────────────
  *   // From any system or state:
- *   AnimationSystem::play(anim, "run");   // restarts if same clip, no-op if already playing
+ *   AnimationSystem::play(anim, "run");   // will restart if the clip isn't
+ *                                       // already mid-play, otherwise does nothing
  */
-class AnimationSystem
-{
-public:
-    /** Advance all AnimatorComponents and sync UVs to SpriteComponents. */
-    void update(World& world, float dt) const;
 
-    /**
-     * Request a clip change on an AnimatorComponent.
-     * If the clip is already playing it is not restarted.
-     * No-op if the clip name doesn't exist in the clips map.
-     */
-    static void play(struct AnimatorComponent& anim, const std::string& clipName);
-};
+
+
+
+#pragma once
+
+#include <string>
+class World;
