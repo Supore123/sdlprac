@@ -1,3 +1,4 @@
+// START_COMMIT_1
 #include "Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
@@ -13,11 +14,13 @@ Camera::Camera()
     recalculateView();
     recalculateProjection();
 }
+// END_COMMIT_1
 
 // -------------------------------------------------------------------------- //
 //  Mode                                                                       //
 // -------------------------------------------------------------------------- //
 
+// START_COMMIT_2
 void Camera::setMode(Mode mode)
 {
     m_mode = mode;
@@ -50,11 +53,13 @@ void Camera::setAspect(float aspect)
     m_aspect = aspect;
     recalculateProjection();
 }
+// END_COMMIT_2
 
 // -------------------------------------------------------------------------- //
 //  View (look-at)                                                             //
 // -------------------------------------------------------------------------- //
 
+// START_COMMIT_3
 void Camera::setPosition(const glm::vec3& pos)
 {
     m_position = pos;
@@ -78,11 +83,13 @@ void Camera::setUp(const glm::vec3& up)
     m_up = up;
     recalculateView();
 }
+// END_COMMIT_3
 
 // -------------------------------------------------------------------------- //
 //  FPS controls                                                               //
 // -------------------------------------------------------------------------- //
 
+// START_COMMIT_4
 void Camera::processMouse(float xDelta, float yDelta, float sensitivity)
 {
     m_yaw   += xDelta * sensitivity;
@@ -111,11 +118,13 @@ void Camera::processKeyboard(MoveDir direction, float dt, float speed)
 
     recalculateView();
 }
+// END_COMMIT_4
 
 // -------------------------------------------------------------------------- //
 //  Private helpers                                                            //
 // -------------------------------------------------------------------------- //
 
+// START_COMMIT_5
 void Camera::updateVectors()
 {
     float yawRad   = glm::radians(m_yaw);
@@ -158,3 +167,4 @@ void Camera::recalculateProjection()
             -1000.f, 1000.f);
     }
 }
+// END_COMMIT_5
